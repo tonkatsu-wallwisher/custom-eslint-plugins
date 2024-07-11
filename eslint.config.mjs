@@ -3,8 +3,10 @@ import js from '@eslint/js'
 import typescriptEslintParser from '@typescript-eslint/parser'
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
 import pluginVue from 'eslint-plugin-vue'
+import globals from 'globals'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import pluginPadlet from './eslint-plugins/index.mjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -15,6 +17,25 @@ const compat = new FlatCompat({
 })
 
 export default [
+  js.configs.recommended,
+  // Config files
+  {
+    files: ['prettier.config.js', 'projects/expo-app/babel.config.js'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+  // Plugin files
+  {
+    files: ['eslint-plugins/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
   // Vue app configs
   ...pluginVue.configs['flat/recommended'].map((config) => ({
     ...config,
@@ -24,9 +45,20 @@ export default [
       parserOptions: {
         ...config.languageOptions?.parserOptions,
         parser: '@typescript-eslint/parser',
+        project: 'projects/vue-app/tsconfig.app.json',
+        extraFileExtensions: ['.vue'],
       },
     },
   })),
+  {
+    files: ['projects/vue-app/**/*.vue'],
+    plugins: {
+      '@padlet': pluginPadlet,
+    },
+    rules: {
+      '@padlet/no-unstable-computed-value': 'error',
+    },
+  },
   // Expo app configs
   ...compat.extends('expo').map((config) => ({
     ...config,
@@ -47,5 +79,25 @@ export default [
       'import/no-unresolved': 'off',
     },
   },
+  // React Component files
+  {
+    files: ['projects/expo-app/**/*.tsx'],
+    plugins: {
+      '@padlet': pluginPadlet,
+    },
+    rules: {
+      '@padlet/memoize-jsx-attributes': 'error',
+    },
+  },
+  // Script files
+  {
+    files: ['projects/expo-app/scripts/**/*.js'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+  // Prettier
   eslintPluginPrettierRecommended,
 ]
